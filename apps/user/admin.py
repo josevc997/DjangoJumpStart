@@ -13,11 +13,3 @@ class UserAdmin(admin.ModelAdmin):
         "is_active",
     )
     list_filter = ("is_active",)
-    # fields = (
-    #     "username",
-    #     "email",
-    #     "first_name",
-    #     "last_name",
-    #     "is_active",
-    #     "is_staff",
-    # )

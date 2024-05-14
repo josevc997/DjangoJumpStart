@@ -1,7 +1,8 @@
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import User
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -33,19 +34,65 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "name", "_id", "isAdmin"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "name",
+            "image",
+            "_id",
+            "isAdmin",
+            "is_active",
+            "date_joined",
+            "last_login",
+        ]
 
-    def get__id(self, obj):
+    def get__id(self, obj: User):
         return obj.id
 
-    def get_isAdmin(self, obj):
+    def get_isAdmin(self, obj: User):
         return obj.is_staff
 
-    def get_name(self, obj):
-        name = obj.first_name
-        if name == "":
+    def get_name(self, obj: User):
+        name = f"{obj.first_name} {obj.last_name}"
+        if name.strip() == "":
             name = obj.email
-        return name
+        return name.strip()
+
+
+class UserSerializerWithNames(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField(read_only=True)
+    _id = serializers.SerializerMethodField(read_only=True)
+    isAdmin = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "name",
+            "_id",
+            "isAdmin",
+            "is_active",
+            "date_joined",
+            "last_login",
+            "image",
+        ]
+
+    def get__id(self, obj: User):
+        return obj.id
+
+    def get_isAdmin(self, obj: User):
+        return obj.is_staff
+
+    def get_name(self, obj: User):
+        name = f"{obj.first_name} {obj.last_name}"
+        if name.strip() == "":
+            name = obj.email
+        return name.strip()
 
 
 class UserSerializerWithToken(UserSerializer):
@@ -53,7 +100,15 @@ class UserSerializerWithToken(UserSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "_id", "username", "email", "name", "isAdmin", "token"]
+        fields = [
+            "id",
+            "_id",
+            "username",
+            "email",
+            "name",
+            "isAdmin",
+            "token",
+        ]
 
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
