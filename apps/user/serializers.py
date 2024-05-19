@@ -107,6 +107,7 @@ class UserSerializerWithToken(UserSerializer):
             "email",
             "name",
             "isAdmin",
+            "image",
             "token",
         ]
 
