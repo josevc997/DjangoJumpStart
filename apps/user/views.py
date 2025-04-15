@@ -34,7 +34,8 @@ class UserViewSet(viewsets.ModelViewSet):
     @permission_classes([permissions.IsAuthenticated])
     def retrieve(self, request, *args, **kwargs):
         current_user = super().get_object()
-        serialized_data = UserSerializerWithNames(current_user, many=False).data
+        serialized_data = UserSerializerWithNames(
+            current_user, many=False).data
         return Response(serialized_data)
 
     @permission_classes([permissions.IsAdminUser])
@@ -56,7 +57,8 @@ class UserViewSet(viewsets.ModelViewSet):
             new_user.save()
         except Exception as e:
             raise serializers.ValidationError({"detail": str(e)})
-        return Response(data)
+        serialized_user = UserSerializerWithNames(new_user, many=False)
+        return Response(serialized_user.data)
 
     @permission_classes([permissions.IsAuthenticated])
     def post(self, request, *args, **kwargs):
@@ -65,11 +67,13 @@ class UserViewSet(viewsets.ModelViewSet):
         if errors:
             return Response({"detail": errors}, status=400)
         current_user = super().get_object()
-        current_user.first_name = data.get("first_name", current_user.first_name)
+        current_user.first_name = data.get(
+            "first_name", current_user.first_name)
         current_user.last_name = data.get("last_name", current_user.last_name)
         current_user.image = data.get("image", current_user.image)
         current_user.save()
-        serialized_data = UserSerializerWithNames(current_user, many=False).data
+        serialized_data = UserSerializerWithNames(
+            current_user, many=False).data
         return Response(serialized_data)
 
     @action(
