@@ -12,4 +12,31 @@ class UserAdmin(admin.ModelAdmin):
         "last_name",
         "is_active",
     )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "username",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password",
+                )
+            },
+        ),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+    )
     list_filter = ("is_active",)
+    filter_horizontal = ("groups",)

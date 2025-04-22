@@ -1,15 +1,25 @@
-from rest_framework import permissions, serializers, viewsets
+from django.contrib.auth.models import Group, Permission
+from rest_framework import (
+    permissions,
+    serializers,
+    viewsets,
+)
 from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.user.validators import validate_admin_update_user, validate_create_user_form
+from apps.user.validators import (
+    validate_admin_update_user,
+    validate_create_user_form,
+)
 
 from .models import User
 from .serializers import (
+    GroupSerializer,
     MyTokenObtainPairSerializer,
     UserSerializer,
     UserSerializerWithNames,
+    PermissionSerializer,
 )
 
 
@@ -34,8 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @permission_classes([permissions.IsAuthenticated])
     def retrieve(self, request, *args, **kwargs):
         current_user = super().get_object()
-        serialized_data = UserSerializerWithNames(
-            current_user, many=False).data
+        serialized_data = UserSerializerWithNames(current_user, many=False).data
         return Response(serialized_data)
 
     @permission_classes([permissions.IsAdminUser])
@@ -67,13 +76,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if errors:
             return Response({"detail": errors}, status=400)
         current_user = super().get_object()
-        current_user.first_name = data.get(
-            "first_name", current_user.first_name)
+        current_user.first_name = data.get("first_name", current_user.first_name)
         current_user.last_name = data.get("last_name", current_user.last_name)
         current_user.image = data.get("image", current_user.image)
         current_user.save()
-        serialized_data = UserSerializerWithNames(
-            current_user, many=False).data
+        serialized_data = UserSerializerWithNames(current_user, many=False).data
         return Response(serialized_data)
 
     @action(
@@ -88,3 +95,23 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         serialized_user = UserSerializer(user, many=False).data
         return Response(serialized_user)
+
+
+class GroupViewSet(viewsets.ModelViewSet):
+    """
+    A viewset for viewing and editing group instances.
+    """
+
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
+    http_method_names = ["get", "post", "put"]
+
+
+class PermissionViewSet(viewsets.ModelViewSet):
+    """
+    A viewset for viewing and editing permission instances.
+    """
+
+    serializer_class = PermissionSerializer
+    queryset = Permission.objects.all()
+    http_method_names = ["get", "post"]
