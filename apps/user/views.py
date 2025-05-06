@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Group, Permission, PermissionsMixin
 from rest_framework import (
     permissions,
     serializers,
@@ -8,6 +8,7 @@ from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.user.permissions import CustomPermission
 from apps.user.validators import (
     validate_admin_update_user,
     validate_create_user_form,
@@ -105,6 +106,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
     http_method_names = ["get", "post", "put"]
+    permission_classes = [CustomPermission]
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
@@ -115,3 +117,27 @@ class PermissionViewSet(viewsets.ModelViewSet):
     serializer_class = PermissionSerializer
     queryset = Permission.objects.all()
     http_method_names = ["get", "post"]
+
+
+class UserPermissionViewSet(viewsets.ViewSet):
+    """
+    A viewset for viewing and editing user permission instances.
+    """
+
+    serializer_class = PermissionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.get_all_permissions()
+
+    def list(self, request):
+        """
+        List all permissions for the authenticated user.
+        """
+        user = request.user
+        permissions = user.get_all_permissions()
+        permission_list = [
+            permission_item.split(".")[1] for permission_item in permissions
+        ]
+        return Response(permission_list)
