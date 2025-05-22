@@ -61,41 +61,6 @@ class UserSerializer(serializers.ModelSerializer):
         return name.strip()
 
 
-class UserSerializerWithNames(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField(read_only=True)
-    _id = serializers.SerializerMethodField(read_only=True)
-    isAdmin = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "username",
-            "first_name",
-            "last_name",
-            "email",
-            "name",
-            "_id",
-            "isAdmin",
-            "is_active",
-            "date_joined",
-            "last_login",
-            "image",
-        ]
-
-    def get__id(self, obj: User):
-        return obj.id
-
-    def get_isAdmin(self, obj: User):
-        return obj.is_staff
-
-    def get_name(self, obj: User):
-        name = f"{obj.first_name} {obj.last_name}"
-        if name.strip() == "":
-            name = obj.email
-        return name.strip()
-
-
 class UserSerializerWithToken(UserSerializer):
     token = serializers.SerializerMethodField(read_only=True)
 
@@ -127,3 +92,49 @@ class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permission
         fields = "__all__"
+
+
+class UserSerializerWithNames(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField(read_only=True)
+    _id = serializers.SerializerMethodField(read_only=True)
+    isAdmin = serializers.SerializerMethodField(read_only=True)
+    groups = GroupSerializer(read_only=True, many=True)
+    permissions = PermissionSerializer(
+        read_only=True, many=True, source="user_permissions"
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "name",
+            "_id",
+            "isAdmin",
+            "is_active",
+            "date_joined",
+            "last_login",
+            "image",
+            "groups",
+            "permissions",
+        ]
+
+    def get__id(self, obj: User):
+        return obj.id
+
+    def get_isAdmin(self, obj: User):
+        return obj.is_staff
+
+    def get_name(self, obj: User):
+        name = f"{obj.first_name} {obj.last_name}"
+        if name.strip() == "":
+            name = obj.email
+        return name.strip()
+
+    # def get_image(self, obj: User):
+    #     if obj.image:
+    #         return obj.image.url
+    #     return None

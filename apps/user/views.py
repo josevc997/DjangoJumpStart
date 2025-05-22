@@ -45,7 +45,9 @@ class UserViewSet(viewsets.ModelViewSet):
     @permission_classes([permissions.IsAuthenticated])
     def retrieve(self, request, *args, **kwargs):
         current_user = super().get_object()
-        serialized_data = UserSerializerWithNames(current_user, many=False).data
+        serialized_data = UserSerializerWithNames(
+            current_user, many=False, context={"request": request}
+        ).data
         return Response(serialized_data)
 
     @permission_classes([permissions.IsAdminUser])
@@ -141,3 +143,24 @@ class UserPermissionViewSet(viewsets.ViewSet):
             permission_item.split(".")[1] for permission_item in permissions
         ]
         return Response(permission_list)
+
+    def update(self, request, pk=None):
+        """
+        Update user permissions.
+        """
+        user = User.objects.get(pk=pk)
+        if not user:
+            return Response({"detail": "User not found."}, status=404)
+        permissions = request.data.get("permissions", [])
+        if not permissions:
+            return Response({"detail": "No permissions provided."}, status=400)
+
+        # Clear existing permissions
+        user.user_permissions.clear()
+
+        # Assign new permissions
+        for perm in permissions:
+            permission = Permission.objects.get(codename=perm)
+            user.user_permissions.add(permission)
+
+        return Response({"detail": "Permissions updated successfully."})
