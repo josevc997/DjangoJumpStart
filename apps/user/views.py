@@ -164,3 +164,57 @@ class UserPermissionViewSet(viewsets.ViewSet):
             user.user_permissions.add(permission)
 
         return Response({"detail": "Permissions updated successfully."})
+
+
+class UserGroupViewSet(viewsets.ViewSet):
+    """
+    A viewset for viewing and editing user group instances.
+    """
+
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.groups.all()
+
+    # def list(self, request):
+    #     """
+    #     List all permissions for the authenticated user.
+    #     """
+    #     user = request.user
+    #     permissions = user.get_all_permissions()
+    #     permission_list = [
+    #         permission_item.split(".")[1] for permission_item in permissions
+    #     ]
+    #     return Response(permission_list)
+
+    def update(self, request, pk=None):
+        """
+        Update user groups.
+        """
+        user = User.objects.get(pk=pk)
+        if not user:
+            return Response({"detail": "User not found."}, status=404)
+        groups = request.data.get("groups", [])
+        if not groups:
+            return Response({"detail": "No groups provided."}, status=400)
+
+        # Clear existing permissions
+        if not isinstance(groups, list):
+            return Response({"detail": "Groups must be a list."}, status=400)
+        # Validate that all provided groups exist
+        for group_name in groups:
+            if not Group.objects.filter(name=group_name).exists():
+                return Response(
+                    {"detail": f"Group '{group_name}' does not exist."}, status=400
+                )
+        # Clear existing groups
+        user.groups.clear()
+
+        # Assign new groups
+        for group_name in groups:
+            group_instance = Group.objects.get(name=group_name)
+            user.groups.add(group_instance)
+
+        return Response({"detail": "Groups updated successfully."})
