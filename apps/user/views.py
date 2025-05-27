@@ -40,7 +40,18 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @permission_classes([permissions.IsAuthenticated])
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        """
+        List all users.
+        """
+        user = request.user
+        if not user.is_superuser:
+            queryset = User.objects.filter(is_superuser=False)
+        else:
+            queryset = self.get_queryset()
+        serialized_data = UserSerializerWithNames(
+            queryset, many=True, context={"request": request}
+        ).data
+        return Response(serialized_data)
 
     @permission_classes([permissions.IsAuthenticated])
     def retrieve(self, request, *args, **kwargs):
@@ -72,7 +83,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serialized_user = UserSerializerWithNames(new_user, many=False)
         return Response(serialized_user.data)
 
-    @permission_classes([permissions.IsAuthenticated])
+    @permission_classes([CustomPermission])
     def post(self, request, *args, **kwargs):
         data = request.data
         errors = validate_admin_update_user(data)
@@ -118,7 +129,29 @@ class PermissionViewSet(viewsets.ModelViewSet):
 
     serializer_class = PermissionSerializer
     queryset = Permission.objects.all()
-    http_method_names = ["get", "post"]
+    http_method_names = ["get", "post", "put"]
+    permission_classes = [CustomPermission]
+
+    def update(self, request, pk=None):
+        """
+        Update user permissions.
+        """
+        user = User.objects.get(pk=pk)
+        if not user:
+            return Response({"detail": "User not found."}, status=404)
+        permissions = request.data.get("permissions", [])
+        if not permissions:
+            return Response({"detail": "No permissions provided."}, status=400)
+
+        # Clear existing permissions
+        user.user_permissions.clear()
+
+        # Assign new permissions
+        for perm in permissions:
+            permission = Permission.objects.get(codename=perm)
+            user.user_permissions.add(permission)
+
+        return Response({"detail": "Permissions updated successfully."})
 
 
 class UserPermissionViewSet(viewsets.ViewSet):
@@ -144,27 +177,6 @@ class UserPermissionViewSet(viewsets.ViewSet):
         ]
         return Response(permission_list)
 
-    def update(self, request, pk=None):
-        """
-        Update user permissions.
-        """
-        user = User.objects.get(pk=pk)
-        if not user:
-            return Response({"detail": "User not found."}, status=404)
-        permissions = request.data.get("permissions", [])
-        if not permissions:
-            return Response({"detail": "No permissions provided."}, status=400)
-
-        # Clear existing permissions
-        user.user_permissions.clear()
-
-        # Assign new permissions
-        for perm in permissions:
-            permission = Permission.objects.get(codename=perm)
-            user.user_permissions.add(permission)
-
-        return Response({"detail": "Permissions updated successfully."})
-
 
 class UserGroupViewSet(viewsets.ViewSet):
     """
@@ -172,22 +184,11 @@ class UserGroupViewSet(viewsets.ViewSet):
     """
 
     serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CustomPermission]
 
     def get_queryset(self):
         user = self.request.user
         return user.groups.all()
-
-    # def list(self, request):
-    #     """
-    #     List all permissions for the authenticated user.
-    #     """
-    #     user = request.user
-    #     permissions = user.get_all_permissions()
-    #     permission_list = [
-    #         permission_item.split(".")[1] for permission_item in permissions
-    #     ]
-    #     return Response(permission_list)
 
     def update(self, request, pk=None):
         """
