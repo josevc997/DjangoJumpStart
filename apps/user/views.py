@@ -38,7 +38,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     http_method_names = ["get", "post"]
 
-    @permission_classes([permissions.IsAuthenticated])
+    @permission_classes([CustomPermission])
     def list(self, request, *args, **kwargs):
         """
         List all users.
@@ -53,7 +53,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ).data
         return Response(serialized_data)
 
-    @permission_classes([permissions.IsAuthenticated])
+    @permission_classes([CustomPermission])
     def retrieve(self, request, *args, **kwargs):
         current_user = super().get_object()
         serialized_data = UserSerializerWithNames(
@@ -61,7 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ).data
         return Response(serialized_data)
 
-    @permission_classes([permissions.IsAdminUser])
+    @permission_classes([CustomPermission])
     def create(self, request, *args, **kwargs):
         data = request.data
         errors = validate_create_user_form(data)
