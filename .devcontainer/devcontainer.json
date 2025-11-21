@@ -7,7 +7,7 @@
 		8000,
 		5432
 	],
-	"postCreateCommand": "poetry install",
+	"postCreateCommand": "poetry install --no-root",
 	"remoteUser": "vscode",
 	"customizations": {
 		"vscode": {
