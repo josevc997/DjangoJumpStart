@@ -1,4 +1,8 @@
 from django.contrib.auth.models import Group, Permission, PermissionsMixin
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import (
     permissions,
     serializers,
@@ -219,3 +223,53 @@ class UserGroupViewSet(viewsets.ViewSet):
             user.groups.add(group_instance)
 
         return Response({"detail": "Groups updated successfully."})
+
+
+class DashboardViewSet(viewsets.ViewSet):
+    """
+    A viewset for retrieving dashboard statistics.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        """
+        Retrieve dashboard statistics.
+        """
+        total_users = User.objects.count()
+        total_groups = Group.objects.count()
+
+        six_months_ago = timezone.now() - timedelta(days=180)
+
+        # Query users joined in the last 6 months, grouped by month
+        users_by_month = (
+            User.objects.filter(date_joined__gte=six_months_ago)
+            .annotate(month=TruncMonth("date_joined"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        # Format the response
+        user_data = [
+            {
+                "date": item["month"].strftime("%Y-%m-01") if item["month"] else None,
+                "amount": item["count"],
+            }
+            for item in users_by_month
+        ]
+
+        data = {
+            "stats": [
+                {
+                    "title": "Total Users",
+                    "content": total_users,
+                },
+                {
+                    "title": "Groups",
+                    "content": total_groups,
+                },
+            ],
+            "graph": user_data,
+        }
+        return Response(data)

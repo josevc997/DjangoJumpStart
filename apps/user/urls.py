@@ -15,6 +15,7 @@ router.register(
     r"user-permission", views.UserPermissionViewSet, basename="user-permission"
 )
 router.register(r"user-group", views.UserGroupViewSet, basename="user-group")
+router.register(r"dashboard", views.DashboardViewSet, basename="dashboard")
 router.register(r"", views.UserViewSet, basename="custom-auth")
 
 
