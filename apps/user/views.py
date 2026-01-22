@@ -251,13 +251,25 @@ class DashboardViewSet(viewsets.ViewSet):
         )
 
         # Format the response
-        user_data = [
-            {
-                "date": item["month"].strftime("%Y-%m-01") if item["month"] else None,
-                "amount": item["count"],
-            }
+        user_data_dict = {
+            item["month"].strftime("%Y-%m-02"): item["count"]
             for item in users_by_month
-        ]
+            if item["month"]
+        }
+
+        # Add missing months with amount=0
+        current_date = (timezone.now().replace(day=1)).replace(day=1)
+        user_data = []
+        for _ in range(6):
+            date_str = current_date.strftime("%Y-%m-02")
+            user_data.insert(
+                0,
+                {
+                    "date": date_str,
+                    "amount": user_data_dict.get(date_str, 0),
+                },
+            )
+            current_date -= timedelta(days=current_date.day)
 
         data = {
             "stats": [
